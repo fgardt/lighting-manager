@@ -2,11 +2,12 @@ name: branch protection
 
 on:
   pull_request:
+    types: [opened, edited]
 
 jobs:
   check:
     if: ${{ github.base_ref == 'main' }}
-    name: check
+    name: Branch protection
     runs-on: ubuntu-latest
     steps:
       - name: Allowed
