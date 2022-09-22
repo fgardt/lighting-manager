@@ -2,7 +2,6 @@ name: branch protection
 
 on:
   pull_request_target:
-    types: [opened, edited, reopened]
     branches:
       - main
 
