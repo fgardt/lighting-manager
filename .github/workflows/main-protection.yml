@@ -5,21 +5,13 @@ on:
 
 jobs:
   check:
-    if: ${{ github.base_ref == 'refs/heads/main' }}
+    if: ${{ github.base_ref == 'main' }}
     name: check
     runs-on: ubuntu-latest
     steps:
       - name: Allowed
         run: echo "Merge allowed."
-        if: ${{ github.head_ref == 'refs/heads/dev' }}
+        if: ${{ github.head_ref == 'dev' }}
       - name: Blocked
         run: echo "Merge blocked." && exit 1
-        if: ${{ github.head_ref != 'refs/heads/dev' }}
-  debug:
-    name: ci-debug
-    runs-on: ubuntu-latest
-    steps:
-      - name: Print base_ref
-        run: echo ${{ github.base_ref }}
-      - name: Print source_ref
-        run: echo ${{ github.head_ref }}
+        if: ${{ github.head_ref != 'dev' }}
