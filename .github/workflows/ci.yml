@@ -94,8 +94,10 @@ jobs:
         uses: Swatinem/rust-cache@v1
       - name: Install cargo-binstall
         run: wget https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-gnu.tgz -O - | tar -xz -C $HOME/.cargo/bin  
-      - name: Install clippy-sarif & sarif-fmt
-        run: cargo binstall --no-confirm clippy-sarif sarif-fmt
+      - name: Install sarif-fmt & clippy-sarif
+        run: |
+          cargo binstall --no-confirm --pkg-url="{ repo }/releases/download/{ name }-v{ version }/{ name }-{ target }" --pkg-fmt="bin" sarif-fmt
+          cargo binstall --no-confirm --pkg-url="{ repo }/releases/download/{ name }-v{ version }/{ name }-{ target }" --pkg-fmt="bin" clippy-sarif
       - name: Run Clippy
         run: cargo clippy --message-format=json -- -W clippy::pedantic -W clippy::nursery -W clippy::unwrap_used -W clippy::expect_used |
           clippy-sarif | tee results.sarif | sarif-fmt
