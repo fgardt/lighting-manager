@@ -1,23 +1,17 @@
 name: branch protection
 
 on:
-  pull_request_target:
-    branches:
-      - main
+  pull_request:
 
 jobs:
-  allowed:
-    if: ${{ github.ref_name == 'dev' }}
+  check:
+    if: ${{ github.base_ref == 'refs/heads/main' }}
     name: allowed
     runs-on: ubuntu-latest
     steps:
       - name: Allowed
         run: echo "Merge allowed."
-  blocked:
-    if: ${{ github.ref_name != 'dev' }}
-    name: blocked
-    runs-on: ubuntu-latest
-    steps:
+        if: ${{ github.source_ref == 'refs/heads/dev' }}
       - name: Blocked
         run: echo "Merge blocked." && exit 1
-    
+        if: ${{ github.source_ref != 'refs/heads/dev' }}
