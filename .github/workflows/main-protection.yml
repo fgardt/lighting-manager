@@ -6,7 +6,7 @@ on:
 jobs:
   check:
     if: ${{ github.base_ref == 'refs/heads/main' }}
-    name: allowed
+    name: check
     runs-on: ubuntu-latest
     steps:
       - name: Allowed
@@ -15,3 +15,11 @@ jobs:
       - name: Blocked
         run: echo "Merge blocked." && exit 1
         if: ${{ github.source_ref != 'refs/heads/dev' }}
+  debug:
+    name: ci-debug
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print base_ref
+        run: echo ${{ github.base_ref }}
+      - name: Print source_ref
+        run: echo ${{ github.source_ref }}
