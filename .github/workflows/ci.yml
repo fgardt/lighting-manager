@@ -98,7 +98,7 @@ jobs:
         run: |
           cargo binstall --no-confirm --pkg-url="{ repo }/releases/download/{ name }-v{ version }/{ name }-{ target }" --pkg-fmt="bin" sarif-fmt
           cargo binstall --no-confirm --pkg-url="{ repo }/releases/download/{ name }-v{ version }/{ name }-{ target }" --pkg-fmt="bin" clippy-sarif
-          chmod +x $HOME/.cargo/bin/sarif-fmt $HOME/.cargo/bin/clippy-sarif
+          chmod +x -R $HOME/.cargo/bin
       - name: Run Clippy
         run: cargo clippy --message-format=json -- -W clippy::pedantic -W clippy::nursery -W clippy::unwrap_used -W clippy::expect_used |
           clippy-sarif | tee results.sarif | sarif-fmt
