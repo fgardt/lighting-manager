@@ -1,0 +1,24 @@
+name: branch protection
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened]
+    branches:
+      - main
+
+jobs:
+  allowed:
+    if: ${{ github.ref_name == 'dev' }}
+    name: allowed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Allowed
+        run: echo "Merge allowed."
+  blocked:
+    if: ${{ github.ref_name != 'dev' }}
+    name: blocked
+    runs-on: ubuntu-latest
+    steps:
+      - name: Blocked
+        run: echo "Merge blocked." && exit 1
+    
