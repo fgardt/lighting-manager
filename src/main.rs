@@ -1,18 +1,18 @@
 use std::collections::BTreeMap;
-use std::io::Error;
+use std::convert::Infallible;
 use std::fmt;
+use std::io::Error;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
-use std::convert::Infallible;
 
-use warp::{self, Filter};
-use tokio::{sync::Mutex, runtime::Runtime};
-use serde::{Serialize, Deserialize};
-use strum_macros::{EnumVariantNames, FromRepr, EnumString};
-use strum::VariantNames;
 use rs_ws281x::{ChannelBuilder, ControllerBuilder, RawColor, StripType};
+use serde::{Deserialize, Serialize};
+use strum::VariantNames;
+use strum_macros::{EnumString, EnumVariantNames, FromRepr};
+use tokio::{runtime::Runtime, sync::Mutex};
+use warp::{self, Filter};
 
 static DATA_PIN: i32 = 18;
 static LED_COUNT: i32 = 300;
@@ -35,14 +35,14 @@ enum Mode {
 impl fmt::Display for Mode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Mode::OFF => write!(f, "OFF"),
-            Mode::STATIC => write!(f, "STATIC"),
-            Mode::RAINBOW => write!(f, "RAINBOW"),
-            Mode::SLEEP => write!(f, "SLEEP"),
-            Mode::ALARM => write!(f, "ALARM"),
-            Mode::COLORRAPE => write!(f, "COLORRAPE"),
-            Mode::STROBE => write!(f, "STROBE"),
-            Mode::IDENTIFY => write!(f, "IDENTIFY"),
+            Self::OFF => write!(f, "OFF"),
+            Self::STATIC => write!(f, "STATIC"),
+            Self::RAINBOW => write!(f, "RAINBOW"),
+            Self::SLEEP => write!(f, "SLEEP"),
+            Self::ALARM => write!(f, "ALARM"),
+            Self::COLORRAPE => write!(f, "COLORRAPE"),
+            Self::STROBE => write!(f, "STROBE"),
+            Self::IDENTIFY => write!(f, "IDENTIFY"),
         }
     }
 }
@@ -155,9 +155,9 @@ enum HSVComponent {
 impl fmt::Display for HSVComponent {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            HSVComponent::H => write!(f, "HUE"),
-            HSVComponent::S => write!(f, "SAT"),
-            HSVComponent::V => write!(f, "VAL"),
+            Self::H => write!(f, "HUE"),
+            Self::S => write!(f, "SAT"),
+            Self::V => write!(f, "VAL"),
         }
     }
 }
@@ -173,19 +173,18 @@ enum PlainTarget {
 
 impl API {
     async fn run(state: State) {
-        let routes = API::get_routes(state);
+        let routes = Self::get_routes(state);
 
         println!("Starting API on port {PORT}");
 
-        warp::serve(routes)
-            .run(([0, 0, 0, 0], PORT))
-            .await;
-        
+        warp::serve(routes).run(([0, 0, 0, 0], PORT)).await;
+
         println!("API stopped.");
     }
 
-
-    fn get_routes(state: State) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    fn get_routes(
+        state: State,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
         Self::static_routes()
             .or(Self::mode_routes(state.clone()))
             .or(Self::component_routes(state.clone()))
@@ -195,7 +194,6 @@ impl API {
     fn with_state(state: State) -> impl Filter<Extract = (State,), Error = Infallible> + Clone {
         warp::any().map(move || state.clone())
     }
-
 
     async fn static_root_handler() -> Result<impl warp::Reply, Infallible> {
         Ok("RGB Strip Controller API v0.0.0")
@@ -219,7 +217,6 @@ impl API {
         root.or(all_modes)
     }
 
-
     async fn get_mode_handler(state: State) -> Result<impl warp::Reply, Infallible> {
         let safe_state = state.lock().await;
 
@@ -232,16 +229,18 @@ impl API {
         match new_mode {
             Mode::ALARM => {
                 safe_state.interval = Duration::from_millis(1000);
-            },
+            }
             Mode::COLORRAPE => {
-                safe_state.interval = Duration::from_millis(500 + (9500.0 * (safe_state.hue / 360.0)) as u64);
-            },
+                safe_state.interval =
+                    Duration::from_millis(500 + (9500.0 * (safe_state.hue / 360.0)) as u64);
+            }
             Mode::STROBE => {
-                safe_state.interval = Duration::from_millis(50 + (950.0 * (safe_state.hue / 360.0)) as u64);
-            },
+                safe_state.interval =
+                    Duration::from_millis(50 + (950.0 * (safe_state.hue / 360.0)) as u64);
+            }
             _ => {
                 safe_state.interval = Duration::from_millis(300_000);
-            },
+            }
         };
 
         safe_state.render = true;
@@ -251,25 +250,38 @@ impl API {
         Ok(format!("Updated mode: {}", new_mode))
     }
 
-    async fn set_mode_handler_int(new_mode: u8, state: State) -> Result<impl warp::Reply, Infallible> {
+    async fn set_mode_handler_int(
+        new_mode: u8,
+        state: State,
+    ) -> Result<impl warp::Reply, Infallible> {
         let mode_option = Mode::from_repr(new_mode);
 
         match mode_option {
             Some(mode) => Self::set_mode_handler(mode, state).await,
             None => Ok(format!("Unknown mode: {}", new_mode)),
-        }     
+        }
     }
 
-    fn mode_routes(state: State) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-        let get_mode = warp::path!("mode").and(Self::with_state(state.clone())).and_then(Self::get_mode_handler);
-        let set_mode = warp::path!("mode" / Mode).and(Self::with_state(state.clone())).and_then(Self::set_mode_handler);
-        let set_mode_int = warp::path!("mode" / u8).and(Self::with_state(state)).and_then(Self::set_mode_handler_int);
+    fn mode_routes(
+        state: State,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        let get_mode = warp::path!("mode")
+            .and(Self::with_state(state.clone()))
+            .and_then(Self::get_mode_handler);
+        let set_mode = warp::path!("mode" / Mode)
+            .and(Self::with_state(state.clone()))
+            .and_then(Self::set_mode_handler);
+        let set_mode_int = warp::path!("mode" / u8)
+            .and(Self::with_state(state))
+            .and_then(Self::set_mode_handler_int);
 
         get_mode.or(set_mode).or(set_mode_int)
     }
 
-
-    async fn get_component_handler(component: HSVComponent, state: State) -> Result<impl warp::Reply, Infallible> {
+    async fn get_component_handler(
+        component: HSVComponent,
+        state: State,
+    ) -> Result<impl warp::Reply, Infallible> {
         let safe_state = state.lock().await;
 
         let value = match component {
@@ -281,7 +293,11 @@ impl API {
         Ok(format!("Current {}: {}", component, value))
     }
 
-    async fn set_component_handler(component: HSVComponent, value: f32, state: State) -> Result<impl warp::Reply, Infallible> {
+    async fn set_component_handler(
+        component: HSVComponent,
+        value: f32,
+        state: State,
+    ) -> Result<impl warp::Reply, Infallible> {
         let mut safe_state = state.lock().await;
 
         let result = match component {
@@ -291,24 +307,26 @@ impl API {
                 // update interval when depending on hue value
                 match safe_state.mode {
                     Mode::COLORRAPE => {
-                        safe_state.interval = Duration::from_millis(500 + (9500.0 * (safe_state.hue / 360.0)) as u64);
-                    },
+                        safe_state.interval =
+                            Duration::from_millis(500 + (9500.0 * (safe_state.hue / 360.0)) as u64);
+                    }
                     Mode::STROBE => {
-                        safe_state.interval = Duration::from_millis(50 + (950.0 * (safe_state.hue / 360.0)) as u64);
-                    },
-                    _ => {},
+                        safe_state.interval =
+                            Duration::from_millis(50 + (950.0 * (safe_state.hue / 360.0)) as u64);
+                    }
+                    _ => {}
                 };
 
                 safe_state.hue
-            },
+            }
             HSVComponent::S => {
                 safe_state.sat = value.clamp(0.0, 1.0);
                 safe_state.sat
-            },
+            }
             HSVComponent::V => {
                 safe_state.val = value.clamp(0.0, 1.0);
                 safe_state.val
-            },
+            }
         };
 
         safe_state.render = true;
@@ -316,7 +334,11 @@ impl API {
         Ok(format!("Updated {}: {}", component, result))
     }
 
-    async fn set_component_handler_int(component: HSVComponent, value: i16, state: State) -> Result<impl warp::Reply, Infallible> {
+    async fn set_component_handler_int(
+        component: HSVComponent,
+        value: i16,
+        state: State,
+    ) -> Result<impl warp::Reply, Infallible> {
         let result = match component {
             HSVComponent::H => (((value % 360) + 360) % 360) as f32,
             HSVComponent::S | HSVComponent::V => value.clamp(0, 255) as f32 / 255.0,
@@ -325,18 +347,26 @@ impl API {
         Self::set_component_handler(component, result, state).await
     }
 
-    fn component_routes(state: State) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-        let get_component = warp::path!(HSVComponent).and(Self::with_state(state.clone())).and_then(Self::get_component_handler);
-        let set_component_int = warp::path!(HSVComponent / i16).and(Self::with_state(state.clone())).and_then(Self::set_component_handler_int);
-        let set_component = warp::path!(HSVComponent / f32).and(Self::with_state(state)).and_then(Self::set_component_handler);
+    fn component_routes(
+        state: State,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        let get_component = warp::path!(HSVComponent)
+            .and(Self::with_state(state.clone()))
+            .and_then(Self::get_component_handler);
+        let set_component_int = warp::path!(HSVComponent / i16)
+            .and(Self::with_state(state.clone()))
+            .and_then(Self::set_component_handler_int);
+        let set_component = warp::path!(HSVComponent / f32)
+            .and(Self::with_state(state))
+            .and_then(Self::set_component_handler);
 
-        get_component
-            .or(set_component_int)
-            .or(set_component)
+        get_component.or(set_component_int).or(set_component)
     }
 
-
-    async fn get_plain_handler(target: PlainTarget, state: State) -> Result<impl warp::Reply, Infallible> {
+    async fn get_plain_handler(
+        target: PlainTarget,
+        state: State,
+    ) -> Result<impl warp::Reply, Infallible> {
         let safe_state = state.lock().await;
 
         match target {
@@ -347,14 +377,18 @@ impl API {
         }
     }
 
-    fn plain_routes(state: State) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-        warp::path!("plain" / PlainTarget).and(Self::with_state(state)).and_then(Self::get_plain_handler)
+    fn plain_routes(
+        state: State,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        warp::path!("plain" / PlainTarget)
+            .and(Self::with_state(state))
+            .and_then(Self::get_plain_handler)
     }
 }
 
 fn main() -> Result<(), Error> {
     // state storage
-    let state = Arc::new(Mutex::new(StateStruct{
+    let state = Arc::new(Mutex::new(StateStruct {
         hue: 0.0,
         sat: 1.0,
         val: 1.0,
@@ -370,7 +404,6 @@ fn main() -> Result<(), Error> {
     tr.spawn(async move {
         API::run(api_state).await;
     });
-
 
     // LED strip
     let mut controller = ControllerBuilder::new()
@@ -416,9 +449,9 @@ fn main() -> Result<(), Error> {
             let delta_time = safe_state.start.elapsed();
             let progress = ((delta_time.as_millis() % safe_state.interval.as_millis()) as f32)
                 / (safe_state.interval.as_millis() as f32);
-    
+
             let leds = controller.leds_mut(0);
-    
+
             match safe_state.mode {
                 Mode::OFF => {
                     let pixel_u8 = Pixel::OFF.to_u8();
@@ -440,13 +473,13 @@ fn main() -> Result<(), Error> {
                 Mode::RAINBOW => {
                     for (i, led) in leds.iter_mut().enumerate() {
                         let rainbow_hue = (i as f32 + 6000.0 * progress) * (360.0 / 150.0);
-    
+
                         let pixel = Pixel::HSV {
                             h: rainbow_hue,
                             s: safe_state.sat,
                             v: safe_state.val,
                         };
-    
+
                         *led = pixel.to_u8();
                     }
 
@@ -459,19 +492,19 @@ fn main() -> Result<(), Error> {
                     } else {
                         progress_old = progress;
                     }
-    
+
                     let sleep_sat = safe_state.sat - progress * (safe_state.sat / 2.0);
                     let sleep_val = safe_state.val - safe_state.val * progress;
-    
+
                     for (i, led) in leds.iter_mut().enumerate() {
                         let sleep_hue = (i as f32 + 6000.0 * progress) * (360.0 / 150.0);
-    
+
                         let pixel = Pixel::HSV {
                             h: sleep_hue,
                             s: sleep_sat,
                             v: sleep_val,
                         };
-    
+
                         *led = pixel.to_u8();
                     }
 
@@ -483,12 +516,12 @@ fn main() -> Result<(), Error> {
                     } else {
                         Pixel::OFF.to_u8()
                     };
-    
+
                     for led in leds {
                         *led = pixel_u8;
                     }
 
-                    safe_state.render = true
+                    safe_state.render = true;
                 }
                 Mode::COLORRAPE => {
                     let pixel_u8 = Pixel::HSV {
@@ -497,7 +530,7 @@ fn main() -> Result<(), Error> {
                         v: safe_state.val,
                     }
                     .to_u8();
-    
+
                     for led in leds {
                         *led = pixel_u8;
                     }
@@ -510,7 +543,7 @@ fn main() -> Result<(), Error> {
                     } else {
                         Pixel::OFF.to_u8()
                     };
-    
+
                     for led in leds {
                         *led = pixel_u8;
                     }
@@ -520,7 +553,7 @@ fn main() -> Result<(), Error> {
                 Mode::IDENTIFY => {
                     let id_pixel = Pixel::RED.to_u8();
                     let other_pixel = Pixel::WHITE.to_u8();
-    
+
                     for (i, led) in leds.iter_mut().enumerate() {
                         *led = if i == safe_state.hue as usize {
                             id_pixel
@@ -536,7 +569,7 @@ fn main() -> Result<(), Error> {
                 safe_state.render = false;
             }
         }
-        
+
         thread::sleep(Duration::from_millis(10));
     }
 
