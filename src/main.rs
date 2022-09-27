@@ -472,7 +472,7 @@ fn main() -> Result<(), Error> {
                 }
                 Mode::RAINBOW => {
                     for (i, led) in leds.iter_mut().enumerate() {
-                        let rainbow_hue = (i as f32 + 6000.0 * progress) * (360.0 / 150.0);
+                        let rainbow_hue = 6000.0f32.mul_add(progress, i as f32) * (360.0 / 150.0);
 
                         let pixel = Pixel::HSV {
                             h: rainbow_hue,
@@ -497,7 +497,7 @@ fn main() -> Result<(), Error> {
                     let sleep_val = safe_state.val - safe_state.val * progress;
 
                     for (i, led) in leds.iter_mut().enumerate() {
-                        let sleep_hue = (i as f32 + 6000.0 * progress) * (360.0 / 150.0);
+                        let sleep_hue = 6000.0f32.mul_add(progress, i as f32) * (360.0 / 150.0);
 
                         let pixel = Pixel::HSV {
                             h: sleep_hue,
