@@ -4,7 +4,7 @@ use warp::{any, path, Filter, Rejection, Reply};
 use crate::api::handlers::{self, HSVComponent, PlainTarget};
 use crate::state::{Mode, State};
 
-pub(crate) fn get(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn get(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     static_routes()
         .or(mode_routes(state.clone()))
         .or(component_routes(state.clone()))

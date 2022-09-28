@@ -11,7 +11,7 @@ use crate::state::{Mode, State};
 
 #[derive(Debug, EnumString)]
 #[strum(ascii_case_insensitive)]
-pub(crate) enum HSVComponent {
+pub enum HSVComponent {
     H,
     S,
     V,
@@ -29,18 +29,18 @@ impl fmt::Display for HSVComponent {
 
 #[derive(EnumString)]
 #[strum(ascii_case_insensitive)]
-pub(crate) enum PlainTarget {
+pub enum PlainTarget {
     H,
     S,
     V,
     Mode,
 }
 
-pub(crate) async fn static_root() -> Result<impl warp::Reply, Infallible> {
+pub async fn static_root() -> Result<impl warp::Reply, Infallible> {
     Ok("RGB Strip Controller API v0.0.0")
 }
 
-pub(crate) async fn static_all_modes() -> Result<impl Reply, Infallible> {
+pub async fn static_all_modes() -> Result<impl Reply, Infallible> {
     let mut map: BTreeMap<&str, u8> = BTreeMap::new();
 
     for i in 0..Mode::VARIANTS.len() {
@@ -50,13 +50,13 @@ pub(crate) async fn static_all_modes() -> Result<impl Reply, Infallible> {
     Ok(warp::reply::json(&map))
 }
 
-pub(crate) async fn get_mode(state: State) -> Result<impl Reply, Infallible> {
+pub async fn get_mode(state: State) -> Result<impl Reply, Infallible> {
     let safe_state = state.lock().await;
 
     Ok(format!("Current mode: {}", safe_state.mode))
 }
 
-pub(crate) async fn set_mode(new_mode: Mode, state: State) -> Result<String, Infallible> {
+pub async fn set_mode(new_mode: Mode, state: State) -> Result<String, Infallible> {
     let mut safe_state = state.lock().await;
 
     match new_mode {
@@ -83,7 +83,7 @@ pub(crate) async fn set_mode(new_mode: Mode, state: State) -> Result<String, Inf
     Ok(format!("Updated mode: {}", new_mode))
 }
 
-pub(crate) async fn set_mode_int(new_mode: u8, state: State) -> Result<impl Reply, Infallible> {
+pub async fn set_mode_int(new_mode: u8, state: State) -> Result<impl Reply, Infallible> {
     let mode_option = Mode::from_repr(new_mode);
 
     match mode_option {
@@ -92,7 +92,7 @@ pub(crate) async fn set_mode_int(new_mode: u8, state: State) -> Result<impl Repl
     }
 }
 
-pub(crate) async fn get_component(
+pub async fn get_component(
     component: HSVComponent,
     state: State,
 ) -> Result<impl Reply, Infallible> {
@@ -107,7 +107,7 @@ pub(crate) async fn get_component(
     Ok(format!("Current {}: {}", component, value))
 }
 
-pub(crate) async fn set_component(
+pub async fn set_component(
     component: HSVComponent,
     value: f32,
     state: State,
@@ -148,7 +148,7 @@ pub(crate) async fn set_component(
     Ok(format!("Updated {}: {}", component, result))
 }
 
-pub(crate) async fn set_component_int(
+pub async fn set_component_int(
     component: HSVComponent,
     value: i16,
     state: State,
@@ -161,7 +161,7 @@ pub(crate) async fn set_component_int(
     set_component(component, result, state).await
 }
 
-pub(crate) async fn get_plain(target: PlainTarget, state: State) -> Result<impl Reply, Infallible> {
+pub async fn get_plain(target: PlainTarget, state: State) -> Result<impl Reply, Infallible> {
     let safe_state = state.lock().await;
 
     match target {
