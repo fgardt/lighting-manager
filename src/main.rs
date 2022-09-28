@@ -21,8 +21,9 @@ fn main() -> Result<(), Error> {
     let state = state::init();
 
     let socket = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), PORT);
+    let rt = Runtime::new().expect("Couldn't get tokio runtime.");
 
-    api::run(Arc::clone(&state), socket);
+    api::run(Arc::clone(&state), socket, &rt);
 
     let mut controller = controller::init(DATA_PIN, LED_COUNT);
 
@@ -30,8 +31,6 @@ fn main() -> Result<(), Error> {
     let term = Arc::new(AtomicBool::new(false));
     signal_hook::flag::register(signal_hook::consts::SIGINT, Arc::clone(&term))?;
     signal_hook::flag::register(signal_hook::consts::SIGTERM, Arc::clone(&term))?;
-
-    let rt = Runtime::new().expect("Couldn't get runtime for state mutex.");
 
     while !term.load(Ordering::Relaxed) {
         {
