@@ -48,6 +48,7 @@ pub struct StateStruct {
 pub type State = Arc<Mutex<StateStruct>>;
 
 pub fn init() -> State {
+    trace!("init state");
     Arc::new(Mutex::new(StateStruct {
         hue: 0.0,
         sat: 1.0,

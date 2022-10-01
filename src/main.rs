@@ -8,8 +8,12 @@ use std::time::Duration;
 use clap::Parser;
 use tokio::runtime::Runtime;
 
+#[macro_use]
+extern crate log;
+
 mod api;
 mod controller;
+mod logging;
 mod pixel;
 mod state;
 
@@ -31,6 +35,13 @@ struct Cli {
     /// Sets the count of LEDs in the string
     #[clap(short, long, value_parser)]
     count: Option<i32>,
+
+    /// Sets the used logging level
+    /// Possible values: error, warn, info, debug, trace
+    /// For no logging don't set this option
+    /// Note: the LOG_LEVEL environment variable overrides this option
+    #[clap(long, value_parser, verbatim_doc_comment)]
+    log_level: Option<log::Level>,
 }
 
 fn main() -> Result<(), Error> {
@@ -56,6 +67,11 @@ fn main() -> Result<(), Error> {
         None => 300,
     };
 
+    match cli.log_level.as_ref() {
+        Some(level) => logging::init(level.as_str()),
+        None => logging::init("Off"),
+    }
+
     // state storage
     let state = state::init();
 
@@ -71,6 +87,8 @@ fn main() -> Result<(), Error> {
     signal_hook::flag::register(signal_hook::consts::SIGINT, Arc::clone(&term))?;
     signal_hook::flag::register(signal_hook::consts::SIGTERM, Arc::clone(&term))?;
 
+    info!("Running");
+
     while !term.load(Ordering::Relaxed) {
         {
             let safe_state = rt.block_on(state.lock());
@@ -83,6 +101,8 @@ fn main() -> Result<(), Error> {
 
     //turn all LEDs off
     controller.off();
+
+    info!("Stopped");
 
     Ok(())
 }
