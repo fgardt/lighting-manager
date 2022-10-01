@@ -10,9 +10,9 @@ edition = "2021"
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
-warp = "0.3.2"
+warp = "0.3.3"
 strum = "0.24.1"
 strum_macros = "0.24.3"
-rs_ws281x = "0.4.2"
+rs_ws281x = "0.4.4"
 signal-hook = "0.3.14"
-clap = { version= "4.0.2", features = ["derive"] }
+clap = { version= "4.0.7", features = ["derive"] }
