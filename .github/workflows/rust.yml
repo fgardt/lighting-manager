@@ -112,6 +112,6 @@ jobs:
         run: cargo clippy --message-format=json -- -W clippy::pedantic -W clippy::nursery -W clippy::unwrap_used -W clippy::expect_used |
           clippy-sarif | tee results.sarif | sarif-fmt
       - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: results.sarif
