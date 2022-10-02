@@ -8,8 +8,8 @@ use env_logger::{
     fmt::{Color, Style, StyledValue},
     Builder, Env,
 };
-use log::Level;
 use error_stack::{IntoReport, Result, ResultExt};
+use log::Level;
 
 #[derive(Debug)]
 pub struct LoggingSetupError;
@@ -66,7 +66,7 @@ pub fn init(level: &str) -> Result<(), LoggingSetupError> {
         .attach_printable_lazy(|| "unable to configure logger")
         .change_context(LoggingSetupError)?;
 
-        Ok(())
+    Ok(())
 }
 
 struct Padded<T> {

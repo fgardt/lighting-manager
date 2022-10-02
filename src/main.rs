@@ -74,11 +74,11 @@ fn main() -> Result<(), Error> {
     };
 
     match logger {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(report) => {
             eprintln!("{report:?}");
             return Err(Error::new(ErrorKind::Other, "logging setup error"));
-        },
+        }
     }
 
     // state storage
