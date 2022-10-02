@@ -1,5 +1,6 @@
 // This is a modified version of pretty_env_logger v0.4.0 that uses Builder::from_env()
 
+use std::error::Error;
 use std::fmt;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -7,9 +8,21 @@ use env_logger::{
     fmt::{Color, Style, StyledValue},
     Builder, Env,
 };
+use error_stack::{IntoReport, Result, ResultExt};
 use log::Level;
 
-pub fn init(level: &str) {
+#[derive(Debug)]
+pub struct LoggingSetupError;
+
+impl fmt::Display for LoggingSetupError {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.write_str("Logging setup error")
+    }
+}
+
+impl Error for LoggingSetupError {}
+
+pub fn init(level: &str) -> Result<(), LoggingSetupError> {
     let env = Env::default().filter_or("LOG_LEVEL", level);
 
     Builder::from_env(env)
@@ -29,11 +42,31 @@ pub fn init(level: &str) {
             });
 
             let time = buf.timestamp_millis();
+            let text = record.args().to_string();
 
-            writeln!(buf, " {} {} {} > {}", time, level, target, record.args())
+            let target_pad = Padded {
+                value: "  ",
+                width: max_width,
+            };
+
+            // 24 (timestamp) + 5 (level) + 1 space = 30
+            let newline_padding = format!("{:30} {}", " ", target_pad);
+            let lines: Vec<_> = text.lines().collect();
+
+            writeln!(buf, "{} {} {} > {}", time, level, target, lines[0])?;
+
+            for line in &lines[1..] {
+                writeln!(buf, "{} > {}", newline_padding, line)?;
+            }
+
+            Ok(())
         })
         .try_init()
-        .unwrap()
+        .report()
+        .attach_printable_lazy(|| "unable to configure logger")
+        .change_context(LoggingSetupError)?;
+
+    Ok(())
 }
 
 struct Padded<T> {

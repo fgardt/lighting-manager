@@ -1,3 +1,7 @@
+use std::error::Error;
+use std::fmt;
+
+use error_stack::{IntoReport, Result, ResultExt};
 use rs_ws281x::{ChannelBuilder, Controller, ControllerBuilder, StripType};
 use tokio::sync::MutexGuard;
 
@@ -9,7 +13,18 @@ pub struct Data {
     progress_old: f32,
 }
 
-pub fn init(pin: i32, count: i32) -> Data {
+#[derive(Debug)]
+pub struct ControllerError;
+
+impl fmt::Display for ControllerError {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        fmt.write_str("Controller error: unable to process")
+    }
+}
+
+impl Error for ControllerError {}
+
+pub fn init(pin: i32, count: i32) -> Result<Data, ControllerError> {
     let controller = ControllerBuilder::new()
         .freq(800_000)
         .dma(10)
@@ -23,20 +38,27 @@ pub fn init(pin: i32, count: i32) -> Data {
                 .build(),
         )
         .build()
-        .unwrap();
+        .report()
+        .attach_printable_lazy(|| {
+            format!(
+                "could not create controller on pin {} with {} leds",
+                pin, count
+            )
+        })
+        .change_context(ControllerError)?;
 
     let mut data = Data {
-        controller: controller,
+        controller,
         progress_old: 0.0,
     };
 
-    data.off();
+    data.off()?;
 
-    data
+    Ok(data)
 }
 
 impl Data {
-    pub fn update(&mut self, mut state: MutexGuard<StateStruct>) {
+    pub fn update(&mut self, mut state: MutexGuard<StateStruct>) -> Result<(), ControllerError> {
         let delta_time = state.start.elapsed();
         let progress = ((delta_time.as_millis() % state.interval.as_millis()) as f32)
             / (state.interval.as_millis() as f32);
@@ -156,18 +178,30 @@ impl Data {
         }
 
         if state.render {
-            self.controller.render().unwrap();
             state.render = false;
+            self.controller
+                .render()
+                .report()
+                .attach_printable_lazy(|| "unable to render new values")
+                .change_context(ControllerError)?;
         }
+
+        Ok(())
     }
 
-    pub fn off(&mut self) {
+    pub fn off(&mut self) -> Result<(), ControllerError> {
         let leds = self.controller.leds_mut(0);
 
         for led in leds {
             *led = Pixel::OFF.to_u8();
         }
 
-        self.controller.render().unwrap();
+        self.controller
+            .render()
+            .report()
+            .attach_printable_lazy(|| "unable to turn off all LEDs")
+            .change_context(ControllerError)?;
+
+        Ok(())
     }
 }

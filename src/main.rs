@@ -1,4 +1,4 @@
-use std::io::Error;
+use std::io::{Error, ErrorKind};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -6,6 +6,7 @@ use std::thread;
 use std::time::Duration;
 
 use clap::Parser;
+use error_stack::{IntoReport, ResultExt};
 use tokio::runtime::Runtime;
 
 #[macro_use]
@@ -67,20 +68,50 @@ fn main() -> Result<(), Error> {
         None => 300,
     };
 
-    match cli.log_level.as_ref() {
+    let logger = match cli.log_level.as_ref() {
         Some(level) => logging::init(level.as_str()),
         None => logging::init("Off"),
+    };
+
+    match logger {
+        Ok(_) => {}
+        Err(report) => {
+            eprintln!("{report:?}");
+            return Err(Error::new(ErrorKind::Other, "logging setup error"));
+        }
     }
 
     // state storage
     let state = state::init();
 
-    let socket = SocketAddr::new(address, port);
-    let rt = Runtime::new().expect("Couldn't get tokio runtime.");
+    let rt = Runtime::new()
+        .report()
+        .attach_printable_lazy(|| "unable to get tokio runtime");
 
-    api::run(Arc::clone(&state), socket, &rt);
+    let rt = match rt {
+        Ok(runtime) => runtime,
+        Err(report) => {
+            error!("{report:?}");
+            return Err(Error::new(ErrorKind::Other, "runtime error"));
+        }
+    };
 
-    let mut controller = controller::init(pin, count);
+    let stop_api = match api::run(Arc::clone(&state), SocketAddr::new(address, port), &rt) {
+        Ok(tx) => tx,
+        Err(report) => {
+            error!("{report:?}");
+            return Err(Error::new(ErrorKind::Other, "api server error"));
+        }
+    };
+
+    let mut controller = match controller::init(pin, count) {
+        Ok(data) => data,
+        Err(report) => {
+            let _ = stop_api.send(());
+            error!("{report:?}");
+            return Err(Error::new(ErrorKind::Other, "controller error"));
+        }
+    };
 
     // signal handling
     let term = Arc::new(AtomicBool::new(false));
@@ -93,14 +124,26 @@ fn main() -> Result<(), Error> {
         {
             let safe_state = rt.block_on(state.lock());
 
-            controller.update(safe_state);
+            match controller.update(safe_state) {
+                Ok(_) => {}
+                Err(report) => {
+                    warn!("{report:?}");
+                }
+            }
         }
 
         thread::sleep(Duration::from_millis(10));
     }
 
+    let _ = stop_api.send(());
+
     //turn all LEDs off
-    controller.off();
+    match controller.off() {
+        Ok(_) => {}
+        Err(report) => {
+            warn!("{report:?}");
+        }
+    }
 
     info!("Stopped");
 
