@@ -1,0 +1,100 @@
+name: release
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-release:
+    name: Build release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Stable rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          target: arm-unknown-linux-gnueabihf
+          toolchain: stable
+          profile: minimal
+          override: true
+      - name: Install dependencies for rs_ws281x
+        uses: awalsh128/cache-apt-pkgs-action@v1
+        with:
+          packages: libclang-dev gcc-arm-linux-gnueabihf
+          version: 1.0
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v1
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --target arm-unknown-linux-gnueabihf
+      - name: Safe binary artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: binary
+          path: target/arm-unknown-linux-gnueabihf/release/lighting-manager
+  docker-image:
+    name: Build image
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: ["build-release"]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Get binary artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: binary
+          path: target/arm-unknown-linux-gnueabihf/release/lighting-manager
+      - name: Container registry login
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Get tags & labels for container
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+      - name: Build and push container image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: ["build-release"]
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Get binary artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: binary
+          path: target/arm-unknown-linux-gnueabihf/release/lighting-manager
+      - name: Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "target/arm-unknown-linux-gnueabihf/release/lighting-manager"
+          token: ${{ secrets.GITHUB_TOKEN }}
