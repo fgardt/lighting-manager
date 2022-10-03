@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "v*"
+    branches:
+      - "feat/build_container"
 
 env:
   REGISTRY: ghcr.io
@@ -36,7 +38,7 @@ jobs:
       - name: Install dependencies for rs_ws281x
         uses: awalsh128/cache-apt-pkgs-action@v1
         with:
-          packages: libclang-dev gcc-arm-linux-gnueabihf
+          packages: libclang-dev gcc-arm-linux-gnueabihf tree
           version: 1.0
       - name: Rust cache
         uses: Swatinem/rust-cache@v1
@@ -45,6 +47,8 @@ jobs:
         with:
           command: build
           args: --target arm-unknown-linux-gnueabihf
+      - name: Tree
+        run: tree
       - name: Safe binary artifact
         uses: actions/upload-artifact@v3
         with:
