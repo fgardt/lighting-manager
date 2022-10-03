@@ -3,7 +3,7 @@ name: release
 on:
   push:
     branches:
-      - main
+      - feat/build_container
 
 env:
   REGISTRY: ghcr.io
