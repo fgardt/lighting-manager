@@ -65,6 +65,8 @@ jobs:
         with:
           name: binary
           path: target/arm-unknown-linux-gnueabihf/release/lighting-manager
+      - name: Mark binary executable
+        run: chmod +x target/arm-unknown-linux-gnueabihf/release/lighting-manager
       - name: Container registry login
         uses: docker/login-action@v2
         with:
@@ -103,5 +105,5 @@ jobs:
       - name: Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "target/arm-unknown-linux-gnueabihf/release/lighting-manager"
+          artifacts: target/arm-unknown-linux-gnueabihf/release/lighting-manager
           token: ${{ secrets.GITHUB_TOKEN }}
