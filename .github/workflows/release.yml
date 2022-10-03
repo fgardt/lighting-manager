@@ -20,11 +20,10 @@ jobs:
           fetch-depth: 0
       - name: Check for main branch
         run: |
-          git name-rev --name-only --exclude="tags/*" ${{ github.sha }}
-          if [[ $(git name-rev --name-only --exclude="tags/*" ${{ github.sha }}) =~ "feat/build_container" ]]; then
-            echo "continue release process"
+          if [[ $(git name-rev --name-only --exclude="tags/*" ${{ github.sha }}) == "remotes/origin/feat/build_container" ]]; then
+            echo "continue release process."
           else
-            echo "release tag on non release branch. stopping"
+            echo "release tag on wrong branch. stopping."
             exit 1
           fi
       - name: Stable rust toolchain
@@ -54,7 +53,6 @@ jobs:
   docker-image:
     name: Build image
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/z')
     needs: ["build-release"]
     permissions:
       contents: read
@@ -91,7 +89,6 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/z')
     needs: ["build-release"]
     permissions:
       contents: write
