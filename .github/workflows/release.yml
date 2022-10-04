@@ -108,4 +108,4 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ${{ github.workspace }}/lighting-manager/target/arm-unknown-linux-gnueabihf/release/lighting-manager
+          files: ${{ github.workspace }}/target/arm-unknown-linux-gnueabihf/release/lighting-manager
