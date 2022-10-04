@@ -20,7 +20,7 @@ jobs:
           fetch-depth: 0
       - name: Check for main branch
         run: |
-          if [[ $(git name-rev --name-only --exclude="tags/*" ${{ github.sha }}) == "remotes/origin/feat/build_container" ]]; then
+          if [[ $(git name-rev --name-only --exclude="tags/*" ${{ github.sha }}) == "remotes/origin/main" ]]; then
             echo "continue release process."
           else
             echo "release tag on wrong branch. stopping."
