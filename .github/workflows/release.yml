@@ -79,11 +79,16 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: linux/arm/v7
       - name: Build and push container image
         uses: docker/build-push-action@v3
         with:
           context: .
           push: true
+          platforms: linux/arm/v7
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
   release:
@@ -103,4 +108,4 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: target/arm-unknown-linux-gnueabihf/release/lighting-manager
+          files: ${{ github.workspace }}/lighting-manager/target/arm-unknown-linux-gnueabihf/release/lighting-manager
