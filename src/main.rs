@@ -85,7 +85,7 @@ fn main() -> Result<(), Error> {
     let state = state::init();
 
     let rt = Runtime::new()
-        .report()
+        .into_report()
         .attach_printable_lazy(|| "unable to get tokio runtime");
 
     let rt = match rt {

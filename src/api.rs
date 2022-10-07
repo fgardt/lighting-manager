@@ -47,7 +47,7 @@ async fn start_api(
             rx.await.ok();
             info!("API stopped");
         })
-        .report()
+        .into_report()
         .attach_printable_lazy(|| format!("could not bind to {}", socket))
         .change_context(ApiServerError)?;
 
