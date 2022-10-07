@@ -56,13 +56,13 @@ pub fn init(level: &str) -> Result<(), LoggingSetupError> {
             writeln!(buf, "{} {} {} > {}", time, level, target, lines[0])?;
 
             for line in &lines[1..] {
-                writeln!(buf, "{} > {}", newline_padding, line)?;
+                writeln!(buf, "{}   {}", newline_padding, line)?;
             }
 
             Ok(())
         })
         .try_init()
-        .report()
+        .into_report()
         .attach_printable_lazy(|| "unable to configure logger")
         .change_context(LoggingSetupError)?;
 

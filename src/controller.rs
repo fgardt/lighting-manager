@@ -38,7 +38,7 @@ pub fn init(pin: i32, count: i32) -> Result<Data, ControllerError> {
                 .build(),
         )
         .build()
-        .report()
+        .into_report()
         .attach_printable_lazy(|| {
             format!(
                 "could not create controller on pin {} with {} leds",
@@ -181,7 +181,7 @@ impl Data {
             state.render = false;
             self.controller
                 .render()
-                .report()
+                .into_report()
                 .attach_printable_lazy(|| "unable to render new values")
                 .change_context(ControllerError)?;
         }
@@ -198,7 +198,7 @@ impl Data {
 
         self.controller
             .render()
-            .report()
+            .into_report()
             .attach_printable_lazy(|| "unable to turn off all LEDs")
             .change_context(ControllerError)?;
 
