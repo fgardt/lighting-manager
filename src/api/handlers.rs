@@ -37,7 +37,7 @@ pub enum PlainTarget {
 }
 
 pub async fn static_root() -> Result<impl warp::Reply, Infallible> {
-    Ok("RGB Strip Controller API v0.0.0")
+    Ok("RGB Strip Controller API v".to_owned() + env!("CARGO_PKG_VERSION"))
 }
 
 pub async fn static_all_modes() -> Result<impl Reply, Infallible> {
