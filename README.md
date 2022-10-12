@@ -15,16 +15,19 @@ version: "3"
 
 services:
   lighting-manager:
-    ports:
-      - "88:88"
-    privileged: true
     image: ghcr.io/fgardt/lighting-manager:latest
     container_name: lighting-manager
     restart: unless-stopped
-    command: ["--log-level", "info", "--count", "YOUR_LED_COUNT", "--pin", "YOUR_PIN"]
+    privileged: true
+    ports:
+      - "88:88"
+#    environment:
+#      - LOG_LEVEL=trace
+    command: ["--count", "YOUR_LED_COUNT", "--pin", "YOUR_PIN"]
 ```
 
-_note: the container needs to be run in privileged mode to access the GPIOs._
+_note: the container needs to be run in privileged mode to access the GPIOs._\
+_note: default log level for the container is `info`. If you want to override it to any other value you'll need to use the environment variable. Possible values are `off`, `error`, `warn`, `info`, `debug` and `trace`._
 
 ### **Standalone**
 
