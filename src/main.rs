@@ -76,7 +76,11 @@ fn main() -> Result<(), Error> {
         }
     };
 
-    let stop_api = match api::run(Arc::clone(&state), SocketAddr::new(cli.address, cli.port), &rt) {
+    let stop_api = match api::run(
+        Arc::clone(&state),
+        SocketAddr::new(cli.address, cli.port),
+        &rt,
+    ) {
         Ok(tx) => tx,
         Err(report) => {
             error!("{report:?}");
