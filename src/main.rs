@@ -22,15 +22,15 @@ mod state;
 #[clap(author, version, about, long_about = None)]
 struct Cli {
     /// Sets the port to listen on
-    #[clap(short, long, value_parser)]
-    port: Option<u16>,
+    #[clap(short, long, value_parser, default_value_t = 88)]
+    port: u16,
 
     /// Sets the ip address to listen on
-    #[clap(short, long, value_parser)]
-    address: Option<IpAddr>,
+    #[clap(short, long, value_parser, default_value_t = IpAddr::V4(Ipv4Addr::new(0,0,0,0)))]
+    address: IpAddr,
 
     /// Sets the pin to which the WS281x LED string is connected
-    #[clap(long, value_parser)]
+    #[clap(short = 'P', long, value_parser)]
     pin: i32,
 
     /// Sets the count of LEDs in the string
@@ -47,16 +47,6 @@ struct Cli {
 
 fn main() -> Result<(), Error> {
     let cli = Cli::parse();
-
-    let port = match cli.port.as_ref() {
-        Some(port) => *port,
-        None => 88,
-    };
-
-    let address = match cli.address.as_ref() {
-        Some(address) => *address,
-        None => IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
-    };
 
     let logger = match cli.log_level.as_ref() {
         Some(level) => logging::init(level.as_str()),
@@ -86,7 +76,7 @@ fn main() -> Result<(), Error> {
         }
     };
 
-    let stop_api = match api::run(Arc::clone(&state), SocketAddr::new(address, port), &rt) {
+    let stop_api = match api::run(Arc::clone(&state), SocketAddr::new(cli.address, cli.port), &rt) {
         Ok(tx) => tx,
         Err(report) => {
             error!("{report:?}");
