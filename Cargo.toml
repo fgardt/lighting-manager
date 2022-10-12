@@ -2,7 +2,7 @@
 name = "lighting-manager"
 description = "Control WS281x LEDs through a web API"
 repository = "https://github.com/fgardt/lighting-manager"
-version = "0.0.0"
+version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
