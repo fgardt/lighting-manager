@@ -31,11 +31,11 @@ struct Cli {
 
     /// Sets the pin to which the WS281x LED string is connected
     #[clap(long, value_parser)]
-    pin: Option<i32>,
+    pin: i32,
 
     /// Sets the count of LEDs in the string
     #[clap(short, long, value_parser)]
-    count: Option<i32>,
+    count: i32,
 
     /// Sets the used logging level
     /// Possible values: error, warn, info, debug, trace
@@ -56,16 +56,6 @@ fn main() -> Result<(), Error> {
     let address = match cli.address.as_ref() {
         Some(address) => *address,
         None => IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
-    };
-
-    let pin = match cli.pin.as_ref() {
-        Some(pin) => *pin,
-        None => 18,
-    };
-
-    let count = match cli.count.as_ref() {
-        Some(count) => *count,
-        None => 300,
     };
 
     let logger = match cli.log_level.as_ref() {
@@ -104,7 +94,7 @@ fn main() -> Result<(), Error> {
         }
     };
 
-    let mut controller = match controller::init(pin, count) {
+    let mut controller = match controller::init(cli.pin, cli.count) {
         Ok(data) => data,
         Err(report) => {
             let _ = stop_api.send(());
