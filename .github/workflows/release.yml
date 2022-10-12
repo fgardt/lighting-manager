@@ -10,8 +10,8 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-release:
-    name: Build release
+  check-branch:
+    name: Check branch
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,10 +22,20 @@ jobs:
         run: |
           if [[ $(git name-rev --name-only --exclude="tags/*" ${{ github.sha }}) == "remotes/origin/main" ]]; then
             echo "continue release process."
+            echo "::set-output name=continue::true"
           else
-            echo "release tag on wrong branch. stopping."
-            exit 1
+            echo "release tag on wrong branch."
+            echo "::set-output name=continue::false"
           fi
+
+  build-release:
+    name: Build release
+    runs-on: ubuntu-latest
+    needs: ["check-branch"]
+    if: ${{ needs.check-branch.outputs.continue == 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Stable rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -50,6 +60,7 @@ jobs:
         with:
           name: binary
           path: target/arm-unknown-linux-gnueabihf/release/lighting-manager
+
   docker-image:
     name: Build image
     runs-on: ubuntu-latest
@@ -91,6 +102,7 @@ jobs:
           platforms: linux/arm/v7
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
   release:
     name: Release
     runs-on: ubuntu-latest
