@@ -22,20 +22,20 @@ mod state;
 #[clap(author, version, about, long_about = None)]
 struct Cli {
     /// Sets the port to listen on
-    #[clap(short, long, value_parser)]
-    port: Option<u16>,
+    #[clap(short, long, value_parser, default_value_t = 88)]
+    port: u16,
 
     /// Sets the ip address to listen on
-    #[clap(short, long, value_parser)]
-    address: Option<IpAddr>,
+    #[clap(short, long, value_parser, default_value_t = IpAddr::V4(Ipv4Addr::new(0,0,0,0)))]
+    address: IpAddr,
 
     /// Sets the pin to which the WS281x LED string is connected
-    #[clap(long, value_parser)]
-    pin: Option<i32>,
+    #[clap(short = 'P', long, value_parser)]
+    pin: i32,
 
     /// Sets the count of LEDs in the string
     #[clap(short, long, value_parser)]
-    count: Option<i32>,
+    count: i32,
 
     /// Sets the used logging level
     /// Possible values: error, warn, info, debug, trace
@@ -47,26 +47,6 @@ struct Cli {
 
 fn main() -> Result<(), Error> {
     let cli = Cli::parse();
-
-    let port = match cli.port.as_ref() {
-        Some(port) => *port,
-        None => 88,
-    };
-
-    let address = match cli.address.as_ref() {
-        Some(address) => *address,
-        None => IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
-    };
-
-    let pin = match cli.pin.as_ref() {
-        Some(pin) => *pin,
-        None => 18,
-    };
-
-    let count = match cli.count.as_ref() {
-        Some(count) => *count,
-        None => 300,
-    };
 
     let logger = match cli.log_level.as_ref() {
         Some(level) => logging::init(level.as_str()),
@@ -96,7 +76,11 @@ fn main() -> Result<(), Error> {
         }
     };
 
-    let stop_api = match api::run(Arc::clone(&state), SocketAddr::new(address, port), &rt) {
+    let stop_api = match api::run(
+        Arc::clone(&state),
+        SocketAddr::new(cli.address, cli.port),
+        &rt,
+    ) {
         Ok(tx) => tx,
         Err(report) => {
             error!("{report:?}");
@@ -104,7 +88,7 @@ fn main() -> Result<(), Error> {
         }
     };
 
-    let mut controller = match controller::init(pin, count) {
+    let mut controller = match controller::init(cli.pin, cli.count) {
         Ok(data) => data,
         Err(report) => {
             let _ = stop_api.send(());
