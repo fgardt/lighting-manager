@@ -1,14 +1,19 @@
 use std::error::Error;
 use std::fmt;
 
-use error_stack::{IntoReport, Result, ResultExt};
-use rs_ws281x::{ChannelBuilder, Controller, ControllerBuilder, StripType};
+#[cfg(target_arch = "arm-unknown-linux-gnueabihf")]
+use error_stack::{IntoReport, ResultExt};
+use error_stack::Result;
 use tokio::sync::MutexGuard;
+
+#[cfg(target_arch = "arm-unknown-linux-gnueabihf")]
+use rs_ws281x::{ChannelBuilder, Controller, ControllerBuilder, StripType};
 
 use crate::pixel::Pixel;
 use crate::state::{Mode, StateStruct};
 
 pub struct Data {
+    #[cfg(target_arch = "arm-unknown-linux-gnueabihf")]
     controller: Controller,
     progress_old: f32,
 }
@@ -24,6 +29,7 @@ impl fmt::Display for ControllerError {
 
 impl Error for ControllerError {}
 
+#[cfg(target_arch = "arm-unknown-linux-gnueabihf")]
 pub fn init(pin: i32, count: i32) -> Result<Data, ControllerError> {
     let controller = ControllerBuilder::new()
         .freq(800_000)
@@ -57,13 +63,28 @@ pub fn init(pin: i32, count: i32) -> Result<Data, ControllerError> {
     Ok(data)
 }
 
+#[cfg(not(target_arch = "arm-unknown-linux-gnueabihf"))]
+pub fn init(_pin: i32, _count: i32) -> Result<Data, ControllerError> {
+    let mut data = Data {
+        progress_old: 0.0
+    };
+
+    data.off()?;
+
+    Ok(data)
+}
+
 impl Data {
     pub fn update(&mut self, mut state: MutexGuard<StateStruct>) -> Result<(), ControllerError> {
         let delta_time = state.start.elapsed();
         let progress = ((delta_time.as_millis() % state.interval.as_millis()) as f32)
             / (state.interval.as_millis() as f32);
 
+        #[cfg(target_arch = "arm-unknown-linux-gnueabihf")]
         let leds = self.controller.leds_mut(0);
+
+        #[cfg(not(target_arch = "arm-unknown-linux-gnueabihf"))]
+        let leds: &mut[[u8; 4]] = &mut [[0,0,0,0]];
 
         match state.mode {
             Mode::OFF => {
@@ -179,6 +200,8 @@ impl Data {
 
         if state.render {
             state.render = false;
+
+            #[cfg(target_arch = "arm-unknown-linux-gnueabihf")]
             self.controller
                 .render()
                 .into_report()
@@ -190,12 +213,17 @@ impl Data {
     }
 
     pub fn off(&mut self) -> Result<(), ControllerError> {
+        #[cfg(target_arch = "arm-unknown-linux-gnueabihf")]
         let leds = self.controller.leds_mut(0);
+
+        #[cfg(not(target_arch = "arm-unknown-linux-gnueabihf"))]
+        let leds: &mut[[u8; 4]] = &mut [[0,0,0,0]];
 
         for led in leds {
             *led = Pixel::OFF.to_u8();
         }
 
+        #[cfg(target_arch = "arm-unknown-linux-gnueabihf")]
         self.controller
             .render()
             .into_report()
