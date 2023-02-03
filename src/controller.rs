@@ -1,9 +1,9 @@
 use std::error::Error;
 use std::fmt;
 
+use error_stack::Result;
 #[cfg(target_arch = "arm-unknown-linux-gnueabihf")]
 use error_stack::{IntoReport, ResultExt};
-use error_stack::Result;
 use tokio::sync::MutexGuard;
 
 #[cfg(target_arch = "arm-unknown-linux-gnueabihf")]
@@ -65,9 +65,7 @@ pub fn init(pin: i32, count: i32) -> Result<Data, ControllerError> {
 
 #[cfg(not(target_arch = "arm-unknown-linux-gnueabihf"))]
 pub fn init(_pin: i32, _count: i32) -> Result<Data, ControllerError> {
-    let mut data = Data {
-        progress_old: 0.0
-    };
+    let mut data = Data { progress_old: 0.0 };
 
     data.off()?;
 
@@ -84,7 +82,7 @@ impl Data {
         let leds = self.controller.leds_mut(0);
 
         #[cfg(not(target_arch = "arm-unknown-linux-gnueabihf"))]
-        let leds: &mut[[u8; 4]] = &mut [[0,0,0,0]];
+        let leds: &mut [[u8; 4]] = &mut [[0, 0, 0, 0]];
 
         match state.mode {
             Mode::OFF => {
@@ -217,7 +215,7 @@ impl Data {
         let leds = self.controller.leds_mut(0);
 
         #[cfg(not(target_arch = "arm-unknown-linux-gnueabihf"))]
-        let leds: &mut[[u8; 4]] = &mut [[0,0,0,0]];
+        let leds: &mut [[u8; 4]] = &mut [[0, 0, 0, 0]];
 
         for led in leds {
             *led = Pixel::OFF.to_u8();
