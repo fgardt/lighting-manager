@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use rs_ws281x::RawColor;
+pub type RawColor = [u8; 4];
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize)]
