@@ -52,7 +52,7 @@ jobs:
           packages: libclang-dev gcc-arm-linux-gnueabihf
           version: 1.0
       - name: Rust cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
       - name: Build
         uses: actions-rs/cargo@v1
         with:
