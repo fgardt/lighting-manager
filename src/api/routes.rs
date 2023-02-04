@@ -4,7 +4,7 @@ use warp::{any, log, path, Filter, Rejection, Reply};
 use crate::api::handlers::{self, HSVComponent, PlainTarget};
 use crate::state::{Mode, State};
 
-pub fn get(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn get(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     trace!("building routes");
     static_routes()
         .with(log("access-log"))
@@ -17,7 +17,7 @@ fn with_state(state: State) -> impl Filter<Extract = (State,), Error = Infallibl
     any().map(move || state.clone())
 }
 
-fn static_routes() -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn static_routes() -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     let root = path::end().and_then(handlers::static_root);
 
     let all_modes = path!("all_modes").and_then(handlers::static_all_modes);
@@ -25,7 +25,7 @@ fn static_routes() -> impl Filter<Extract = impl Reply, Error = Rejection> + Clo
     root.or(all_modes)
 }
 
-fn mode_routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn mode_routes(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     let get_mode = path!("mode")
         .and(with_state(state.clone()))
         .and_then(handlers::get_mode);
@@ -39,7 +39,9 @@ fn mode_routes(state: State) -> impl Filter<Extract = impl Reply, Error = Reject
     get_mode.or(set_mode).or(set_mode_int)
 }
 
-fn component_routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn component_routes(
+    state: State,
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     let get_component = path!(HSVComponent)
         .and(with_state(state.clone()))
         .and_then(handlers::get_component);
@@ -53,7 +55,7 @@ fn component_routes(state: State) -> impl Filter<Extract = impl Reply, Error = R
     get_component.or(set_component_int).or(set_component)
 }
 
-fn plain_routes(state: State) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+fn plain_routes(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     path!("plain" / PlainTarget)
         .and(with_state(state))
         .and_then(handlers::get_plain)
