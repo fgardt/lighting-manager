@@ -7,10 +7,10 @@ use crate::state::{Mode, State};
 pub fn get(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     trace!("building routes");
     static_routes()
-        .with(log("access-log"))
         .or(mode_routes(state.clone()))
         .or(component_routes(state.clone()))
         .or(plain_routes(state))
+        .with(log("access-log"))
 }
 
 fn with_state(state: State) -> impl Filter<Extract = (State,), Error = Infallible> + Clone {
