@@ -25,10 +25,10 @@ jobs:
         run: |
           if [[ $(git name-rev --name-only --exclude="tags/*" ${{ github.sha }}) == "remotes/origin/main" ]]; then
             echo "continue release process."
-            echo "::set-output name=continue::true"
+            echo "continue=true" >> $GITHUB_OUTPUT
           else
             echo "release tag on wrong branch."
-            echo "::set-output name=continue::false"
+            echo "continue=false" >> $GITHUB_OUTPUT
           fi
 
   build-release:
