@@ -48,7 +48,7 @@ async fn start_api(
             info!("API stopped");
         })
         .into_report()
-        .attach_printable_lazy(|| format!("could not bind to {}", socket))
+        .attach_printable_lazy(|| format!("could not bind to {socket}"))
         .change_context(ApiServerError)?;
 
     runtime.spawn(server);

@@ -1,3 +1,17 @@
+#![warn(
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::unwrap_used,
+    clippy::expect_used
+)]
+#![allow(
+    clippy::upper_case_acronyms,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_lossless,
+    clippy::module_name_repetitions
+)]
+
 use std::io::{Error, ErrorKind};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -48,10 +62,10 @@ struct Cli {
 fn main() -> Result<(), Error> {
     let cli = Cli::parse();
 
-    let logger = match cli.log_level.as_ref() {
-        Some(level) => logging::init(level.as_str()),
-        None => logging::init("Off"),
-    };
+    let logger = cli.log_level.as_ref().map_or_else(
+        || logging::init("Off"),
+        |level| logging::init(level.as_str()),
+    );
 
     match logger {
         Ok(_) => {}
