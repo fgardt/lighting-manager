@@ -17,7 +17,7 @@ jobs:
       continue: ${{ steps.check.outputs.continue }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Check for main branch
@@ -38,7 +38,7 @@ jobs:
     if: ${{ needs.check-branch.outputs.continue == 'true' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Stable rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -73,7 +73,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Get binary artifact
         uses: actions/download-artifact@v3
         with:
@@ -114,7 +114,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Get binary artifact
         uses: actions/download-artifact@v3
         with:
