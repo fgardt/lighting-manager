@@ -52,7 +52,7 @@ jobs:
           packages: libclang-dev gcc-arm-linux-gnueabihf
           version: 1.0
       - name: Rust cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
       - name: Build
         uses: actions-rs/cargo@v1
         with:
@@ -73,7 +73,7 @@ jobs:
           toolchain: stable
           override: true
       - name: Rust cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
       - name: Run tests
         uses: actions-rs/cargo@v1
         with:
@@ -95,7 +95,7 @@ jobs:
       - name: Add Clippy
         run: rustup component add clippy
       - name: Rust cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
       - name: Install cargo-binstall
         run: wget https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-gnu.tgz -O - | tar -xz -C $HOME/.cargo/bin  
       - name: Install sarif-fmt & clippy-sarif
