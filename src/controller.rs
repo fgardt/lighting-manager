@@ -10,7 +10,9 @@ use tokio::sync::MutexGuard;
 use rs_ws281x::{ChannelBuilder, Controller, ControllerBuilder, StripType};
 
 use crate::pixel::Pixel;
-use crate::state::{Mode, StateStruct};
+#[cfg(target_arch = "arm")]
+use crate::state::Mode;
+use crate::state::StateStruct;
 
 pub struct Data {
     #[cfg(target_arch = "arm")]
@@ -73,16 +75,13 @@ pub fn init(_pin: i32, _count: i32) -> Result<Data, ControllerError> {
 }
 
 impl Data {
+    #[cfg(target_arch = "arm")]
     pub fn update(&mut self, mut state: MutexGuard<StateStruct>) -> Result<(), ControllerError> {
         let delta_time = state.start.elapsed();
         let progress = ((delta_time.as_millis() % state.interval.as_millis()) as f32)
             / (state.interval.as_millis() as f32);
 
-        #[cfg(target_arch = "arm")]
         let leds = self.controller.leds_mut(0);
-
-        #[cfg(not(target_arch = "arm"))]
-        let leds: &mut [[u8; 4]] = &mut [[0, 0, 0, 0]];
 
         match state.mode {
             Mode::OFF => {
@@ -199,7 +198,6 @@ impl Data {
         if state.render {
             state.render = false;
 
-            #[cfg(target_arch = "arm")]
             self.controller
                 .render()
                 .into_report()
@@ -210,23 +208,43 @@ impl Data {
         Ok(())
     }
 
+    #[cfg(target_arch = "arm")]
     pub fn off(&mut self) -> Result<(), ControllerError> {
-        #[cfg(target_arch = "arm")]
         let leds = self.controller.leds_mut(0);
-
-        #[cfg(not(target_arch = "arm"))]
-        let leds: &mut [[u8; 4]] = &mut [[0, 0, 0, 0]];
 
         for led in leds {
             *led = Pixel::OFF.to_u8();
         }
 
-        #[cfg(target_arch = "arm")]
         self.controller
             .render()
             .into_report()
             .attach_printable_lazy(|| "unable to turn off all LEDs")
             .change_context(ControllerError)?;
+
+        Ok(())
+    }
+
+    #[cfg(not(target_arch = "arm"))]
+    pub fn update(&mut self, mut _state: MutexGuard<StateStruct>) -> Result<(), ControllerError> {
+        if self.progress_old < 0.0 {
+            Err(ControllerError)?;
+        }
+
+        Ok(())
+    }
+
+    #[cfg(not(target_arch = "arm"))]
+    pub fn off(&mut self) -> Result<(), ControllerError> {
+        if self.progress_old < 0.0 {
+            Err(ControllerError)?;
+        }
+
+        let leds = &mut [[0, 0, 0, 0]];
+
+        for led in leds {
+            *led = Pixel::OFF.to_u8();
+        }
 
         Ok(())
     }

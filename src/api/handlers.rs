@@ -36,10 +36,12 @@ pub enum PlainTarget {
     Mode,
 }
 
+#[allow(clippy::unused_async)]
 pub async fn static_root() -> Result<impl warp::Reply, Infallible> {
     Ok("RGB Strip Controller API v".to_owned() + env!("CARGO_PKG_VERSION"))
 }
 
+#[allow(clippy::unused_async)]
 pub async fn static_all_modes() -> Result<impl Reply, Infallible> {
     let mut map: BTreeMap<&str, u8> = BTreeMap::new();
 
@@ -80,7 +82,7 @@ pub async fn set_mode(new_mode: Mode, state: State) -> Result<String, Infallible
     safe_state.start = Instant::now();
     safe_state.mode = new_mode;
 
-    Ok(format!("Updated mode: {}", new_mode))
+    Ok(format!("Updated mode: {new_mode}"))
 }
 
 pub async fn set_mode_int(new_mode: u8, state: State) -> Result<impl Reply, Infallible> {
@@ -88,7 +90,7 @@ pub async fn set_mode_int(new_mode: u8, state: State) -> Result<impl Reply, Infa
 
     match mode_option {
         Some(mode) => set_mode(mode, state).await,
-        None => Ok(format!("Unknown mode: {}", new_mode)),
+        None => Ok(format!("Unknown mode: {new_mode}")),
     }
 }
 
@@ -104,7 +106,7 @@ pub async fn get_component(
         HSVComponent::V => safe_state.val,
     };
 
-    Ok(format!("Current {}: {}", component, value))
+    Ok(format!("Current {component}: {value}"))
 }
 
 pub async fn set_component(
@@ -145,7 +147,7 @@ pub async fn set_component(
 
     safe_state.render = true;
 
-    Ok(format!("Updated {}: {}", component, result))
+    Ok(format!("Updated {component}: {result}"))
 }
 
 pub async fn set_component_int(
