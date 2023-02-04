@@ -56,7 +56,7 @@ pub fn init(level: &str) -> Result<(), LoggingSetupError> {
             writeln!(buf, "{} {} {} > {}", time, level, target, lines[0])?;
 
             for line in &lines[1..] {
-                writeln!(buf, "{}   {}", newline_padding, line)?;
+                writeln!(buf, "{newline_padding}   {line}")?;
             }
 
             Ok(())
@@ -92,7 +92,7 @@ fn max_target_width(target: &str) -> usize {
     }
 }
 
-fn colored_level<'a>(style: &'a mut Style, level: Level) -> StyledValue<'a, &'static str> {
+fn colored_level(style: &mut Style, level: Level) -> StyledValue<&'static str> {
     match level {
         Level::Trace => style.set_color(Color::Magenta).value("TRACE"),
         Level::Debug => style.set_color(Color::Blue).value("DEBUG"),
