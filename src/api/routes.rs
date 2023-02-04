@@ -39,7 +39,9 @@ fn mode_routes(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rej
     get_mode.or(set_mode).or(set_mode_int)
 }
 
-fn component_routes(state: State) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
+fn component_routes(
+    state: State,
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone {
     let get_component = path!(HSVComponent)
         .and(with_state(state.clone()))
         .and_then(handlers::get_component);
