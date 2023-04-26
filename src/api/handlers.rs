@@ -61,26 +61,18 @@ pub async fn get_mode(state: State) -> Result<impl Reply, Infallible> {
 pub async fn set_mode(new_mode: Mode, state: State) -> Result<String, Infallible> {
     let mut safe_state = state.lock().await;
 
-    match new_mode {
-        Mode::ALARM => {
-            safe_state.interval = Duration::from_millis(1000);
-        }
-        Mode::COLORRAPE => {
-            safe_state.interval =
-                Duration::from_millis(500 + (9500.0 * (safe_state.hue / 360.0)) as u64);
-        }
-        Mode::STROBE => {
-            safe_state.interval =
-                Duration::from_millis(50 + (950.0 * (safe_state.hue / 360.0)) as u64);
-        }
-        _ => {
-            safe_state.interval = Duration::from_millis(300_000);
-        }
+    safe_state.interval = match new_mode {
+        Mode::ALARM => Duration::from_millis(1000),
+        Mode::COLORRAPE => Duration::from_millis(500 + (9500.0 * (safe_state.hue / 360.0)) as u64),
+        Mode::STROBE => Duration::from_millis(50 + (950.0 * (safe_state.hue / 360.0)) as u64),
+        _ => Duration::from_millis(300_000),
     };
 
     safe_state.render = true;
     safe_state.start = Instant::now();
     safe_state.mode = new_mode;
+
+    drop(safe_state);
 
     Ok(format!("Updated mode: {new_mode}"))
 }
@@ -106,6 +98,8 @@ pub async fn get_component(
         HSVComponent::V => safe_state.val,
     };
 
+    drop(safe_state);
+
     Ok(format!("Current {component}: {value}"))
 }
 
@@ -121,7 +115,8 @@ pub async fn set_component(
             safe_state.hue = ((value % 360.0) + 360.0) % 360.0;
 
             // update interval when depending on hue value
-            match safe_state.mode {
+            let current_mode = safe_state.mode;
+            match current_mode {
                 Mode::COLORRAPE => {
                     safe_state.interval =
                         Duration::from_millis(500 + (9500.0 * (safe_state.hue / 360.0)) as u64);
@@ -146,6 +141,9 @@ pub async fn set_component(
     };
 
     safe_state.render = true;
+
+    //this seems unnecessary but pleases clippy to no longer raise clippy::significant_drop_tightening
+    drop(safe_state);
 
     Ok(format!("Updated {component}: {result}"))
 }
