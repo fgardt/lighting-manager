@@ -2,7 +2,7 @@
 name = "lighting-manager"
 description = "Control WS281x LEDs through a web API"
 repository = "https://github.com/fgardt/lighting-manager"
-version = "0.1.2"
+version = "0.1.4"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -10,11 +10,11 @@ edition = "2021"
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
-warp = "0.3.3"
+warp = "0.3.4"
 strum = "0.24.1"
 strum_macros = "0.24.3"
 signal-hook = "0.3.15"
-clap = { version= "4.0", features = ["derive"] }
+clap = { version= "4.2", features = ["derive"] }
 log = "0.4.17"
 env_logger = "0.10.0"
 error-stack = "0.3.1"

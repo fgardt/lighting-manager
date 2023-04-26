@@ -105,7 +105,8 @@ fn main() -> Result<(), Error> {
     let mut controller = match controller::init(cli.pin, cli.count) {
         Ok(data) => data,
         Err(report) => {
-            let _ = stop_api.send(());
+            //TODO: check if and how we could handle this result
+            _ = stop_api.send(());
             error!("{report:?}");
             return Err(Error::new(ErrorKind::Other, "controller error"));
         }
@@ -133,7 +134,8 @@ fn main() -> Result<(), Error> {
         thread::sleep(Duration::from_millis(10));
     }
 
-    let _ = stop_api.send(());
+    //TODO: check if and how we could handle this result
+    _ = stop_api.send(());
 
     //turn all LEDs off
     match controller.off() {
